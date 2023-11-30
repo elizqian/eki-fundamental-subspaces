@@ -1,25 +1,25 @@
 clear; close all; clc
 
 % define inverse problem
-d = 21;
-testcase = 'id-sparse';
+d = 6;
+testcase = 'id-overdet';
 problem = prob_setup(d,testcase);
 
 % draw and visualize initial ensemble
-J = 50;
+J = 21;
 V0 = problem.sample(J);
-ensemblevis(problem,V0,1)
+ensemblevis(problem,V0,'LS',1)
 
 %% EKI iterations
-num_iter = 1000;
+num_iter = 500;
 Vd = zeros(d,J,num_iter);
 
 % identity dynamics version
 Vd(:,:,1) = V0;
 for i = 2:num_iter
-    Vd(:,:,i) = EKIupdate(squeeze(Vd(:,:,i-1)),problem,'a','dzh');
-    if i <=10
-        ensemblevis(problem,squeeze(Vd(:,:,i)),i)
+    Vd(:,:,i) = EKIupdate(squeeze(Vd(:,:,i-1)),problem,'c','dzh');
+    if i <=10 | mod(i,100)==0
+        ensemblevis(problem,squeeze(Vd(:,:,i)),'LS',i)
     end
 end
 

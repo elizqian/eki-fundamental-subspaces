@@ -1,4 +1,4 @@
-function Vnext = EKIupdate(Vnow,problem,obs,method)
+function [Vnext, problem] = EKIupdate(Vnow,problem,obs,method)
 
 [d,J] = size(Vnow);
 
@@ -13,6 +13,13 @@ end
 switch obs
     case 'a'
         m = problem.meas;
+    case 'b'
+        if ~isfield(problem,'noise9b')
+            problem.noise9b = mvnrnd(zeros(1,problem.n),problem.Geps,J)';
+        end
+        m = problem.meas + problem.noise9b;
+    case 'c'
+        m = problem.meas + mvnrnd(zeros(1,problem.n),problem.Geps,J)';
 end
 
 
