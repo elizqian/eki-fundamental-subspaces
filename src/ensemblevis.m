@@ -50,16 +50,16 @@ legend boxoff
 title('State space $R^d$','interpreter','latex','Color',tkcolor,'FontSize',14)
 set(gca,'XColor',tkcolor, 'YColor',tkcolor,'Color',bgcolor);
 subplot(2,1,2)
-m0 = plot(1:problem.n,problem.G*samples,'Color',meascolor); hold on
-m1 = plot(1:problem.n,problem.G*problem.truth,'Color',defline);
-m2 = plot(1:problem.n, problem.meas,'+','Color',measdots,'MarkerSize',4);
+m0 = plot(1:problem.n,problem.H*samples,'Color',meascolor); hold on
+m1 = plot(1:problem.n,problem.H*problem.truth,'Color',defline);
+m2 = plot(1:problem.n, problem.m,'+','Color',measdots,'MarkerSize',4);
 switch ref
     case 'LS'
-        m3 = plot(1:problem.n,problem.G*problem.muLS,':','Color',trcolor_meas);
+        m3 = plot(1:problem.n,problem.H*problem.muLS,':','Color',trcolor_meas);
         legend([m0(1),m1,m2,m3],{'$Gu_i^{(j)}$','$Gu^\dagger$','$m$','$Gu_{\rm LS}$'},...
             'interpreter','latex','location','south','orientation','horizontal','TextColor',tkcolor);
     case 'pos'
-        m3 = plot(1:problem.n,problem.G*problem.mupos,':','Color',trcolor_meas);
+        m3 = plot(1:problem.n,problem.H*problem.mupos,':','Color',trcolor_meas);
         legend([m0(1),m1,m2,m3],{'$Gu_i^{(j)}$','$Gu^\dagger$','$m$','$G\mu_{\rm pos}$'},...
             'interpreter','latex','location','south','orientation','horizontal','TextColor',tkcolor);
 end

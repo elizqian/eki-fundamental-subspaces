@@ -11,15 +11,15 @@ if nargin < 4
 end
 
 switch obs
-    case 'a'
-        m = problem.meas;
+    case 'det'
+        m = problem.m;
     case 'b'
         if ~isfield(problem,'noise9b')
-            problem.noise9b = mvnrnd(zeros(1,problem.n),problem.Geps,J)';
+            problem.noise9b = mvnrnd(zeros(1,problem.n),problem.Sigma,J)';
         end
-        m = problem.meas + problem.noise9b;
-    case 'c'
-        m = problem.meas + mvnrnd(zeros(1,problem.n),problem.Geps,J)';
+        m = problem.m + problem.noise9b;
+    case 'stoch'
+        m = problem.m + mvnrnd(zeros(1,problem.n),problem.Sigma,J)';
 end
 
 
@@ -27,16 +27,16 @@ switch(method)
     case 'dzh'
         mu_i = mean(Vnow,2);
         Gam_i = (Vnow-mu_i)*(Vnow-mu_i)'/(J-1);
-        S_i = (problem.G*Gam_i*problem.G' + problem.Geps);
-        K_i = Gam_i*problem.G'/S_i;
-        Vnext = (eye(d) - K_i*problem.G)*Vnow + K_i*m;
+        S_i = (problem.H*Gam_i*problem.H' + problem.Sigma);
+        K_i = Gam_i*problem.H'/S_i;
+        Vnext = (eye(d) - K_i*problem.H)*Vnow + K_i*m;
         
     case 'iglesias'
-        Znow = [Vnow; problem.G*Vnow];
+        Znow = [Vnow; problem.H*Vnow];
         H = [zeros(problem.n,problem.d), eye(problem.n)];
         mu_i = mean(Znow,2);
         Gam_i = (Znow-mu_i)*(Znow-mu_i)'/(J-1);
-        S_i = (H*Gam_i*H' + problem.Geps);
+        S_i = (H*Gam_i*H' + problem.Sigma);
         K_i = Gam_i*H'/S_i;
         Znext = (eye(d+problem.n) - K_i*H)*Znow + K_i*m;
         Vnext = Znext(1:d,:);
