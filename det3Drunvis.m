@@ -4,6 +4,7 @@ addpath('src/')
 
 % define inverse problem
 H     = [1 0 0; 0 1 0; 0 0 0];
+% H = eye(3);
 [n,d] = size(H);
 LSig = 0.49*rand(n,n);
 Sigma = LSig*LSig';
@@ -45,7 +46,7 @@ figure(1); clf
 for i = 1:3
     subplot(3,4,(i-1)*4+1)
     loglog(0:max_iter,abs(squeeze(theta(i,:,:))'),':','Color',[73 160 242 150]/255)
-    title(labels{(i-1)*4+1},'interpreter','latex')
+    title(labels{(i-1)*4+1},'interpreter','latex','fontsize',20)
 
     subplot(3,4,(i-1)*4+2)
     derp = sqrt(squeeze(sum(pagemtimes(spdc.(meas_projs{i}),theta).^2,1))');
@@ -54,11 +55,11 @@ for i = 1:3
     end
     loglog(0:max_iter,derp,'--','Color',[73 160 242 150]/255)
     ytickformat('%.2f')
-    title(labels{(i-1)*4+2},'interpreter','latex')
+    title(labels{(i-1)*4+2},'interpreter','latex','fontsize',20)
 
     subplot(3,4,(i-1)*4+3)
     loglog(0:max_iter,abs(squeeze(omega(i,:,:))'),':','Color',[245 187 42 150]/255)
-    title(labels{(i-1)*4+3},'interpreter','latex')
+    title(labels{(i-1)*4+3},'interpreter','latex','fontsize',20)
 
     subplot(3,4,(i-1)*4+4)
     derp = sqrt(squeeze(sum(pagemtimes(spdc.(state_projs{i}),omega).^2,1))');
@@ -67,7 +68,7 @@ for i = 1:3
     end
     loglog(0:max_iter,derp,'--','Color',[245 187 42 150]/255)
     ytickformat('%.2f')
-    title(labels{(i-1)*4+4},'interpreter','latex')
+    title(labels{(i-1)*4+4},'interpreter','latex','fontsize',20)
 end
 
 sgtitle("deterministic EKI: misfit/error components/projections")
