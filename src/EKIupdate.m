@@ -19,7 +19,8 @@ switch obs
         end
         m = problem.m + problem.noise9b;
     case 'stoch'
-        m = problem.m + mvnrnd(zeros(1,problem.n),problem.Sigma,J)';
+        noise = mvnrnd(zeros(1,problem.n),problem.Sigma,J)';
+        m = problem.m + noise;
 end
 
 
@@ -59,6 +60,7 @@ switch(method)
 
         Vnext = MtildeInv\Vnow + Ktilde*m;
         problem.Gi = MtildeInv\problem.Gi;
+        problem.noise = noise;
 
 end
 problem.iter = problem.iter+1;
