@@ -2,7 +2,7 @@ function spdc = specdecomp(H,vvi,Sigma)
 [n,d] = size(H);
 
 fisher = H'*(Sigma\H);
-Hplus  = pinv(fisher)*(H/Sigma);
+Hplus  = pinv(fisher)*(H'/Sigma);
 
 Gam = cov(vvi');
 HGamH = H*Gam*H';
