@@ -12,9 +12,10 @@ truth = rand(n,1);
 m     = H*truth+mvnrnd(zeros(1,n),Sigma)';
 Hplus = pinv(H'*(Sigma\H))*(H/Sigma);
 vstar = Hplus*m;
+iter  = 0;
 
 problem = struct();
-problem = add2struct(problem,H,n,d,Sigma,truth,m,Hplus,vstar);
+problem = add2struct(problem,H,n,d,Sigma,truth,m,Hplus,vstar,iter);
 
 % initialize particles
 J   = 15;
