@@ -2,8 +2,8 @@ clear; close all; clc
 
 addpath('src/')
 
-rng(42)
-rng(64)
+% rng(42)
+% rng(64)
 
 basis = orth(rand(3,3));
 % define inverse problem
@@ -112,10 +112,8 @@ finis = plot(x(end),y(end),'bo');
 end
 legend([start(1),finis(1)],{'v_0','v_T'},'fontsize',18,'location','best')
 
-%%
+%% state space 3D vis
 figure(4); clf
-
-temp = pagemtimes(spdc.bbPr,vv);
 temp = vv;
 for j = 1:J
     x = squeeze(temp(1,j,1:10:end));
@@ -138,14 +136,51 @@ ranGam0 = orth(vv0);
 ranPart = plotPlane(ranGam0(:,1),ranGam0(:,2));
 set(ranPart, 'FaceColor', 'blue', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
 
+ranH = orth(H');
+ranH = plotPlane(ranH(:,1),ranH(:,2));
+set(ranH, 'FaceColor', 'magenta', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+legend([start(1),finis(1),star,kerP,ranPart,ranH],{'v_0','v_T','v^*','ker(Pr)','ran(Gam0)','ran(H^T)'},'fontsize',18,'location','best')
+
+xlabel('x')
+ylabel('y')
+zlabel('z')
+
+title('State space')
+
+%% measurement space 3D vis
+figure(5); clf
+temp = hh;
+for j = 1:J
+    x = squeeze(temp(1,j,1:10:end));
+    y = squeeze(temp(2,j,1:10:end));
+    z = squeeze(temp(3,j,1:10:end));
+    plot3(x,y,z,'k'); hold on
+    start = plot3(x(1),y(1),z(1),'r+');
+    finis = plot3(x(end),y(end),z(end),'bo');
+end
+meas = plot3(m(1),m(2),m(3),'g*');
+Pm = spdc.calPr*m;
+ppmeas = plot3(Pm(1),Pm(2),Pm(3),'m*');
+plot3([m(1) Pm(1)],[m(2) Pm(2)],[m(3) Pm(3)],'g:')
+
+kerPr = null(spdc.calPr);
+kerP = plotPlane(kerPr(:,1),kerPr(:,2));
+set(kerP, 'FaceColor', 'yellow', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+% 
+% ranGam0 = orth(vv0);
+% ranPart = plotPlane(ranGam0(:,1),ranGam0(:,2));
+% set(ranPart, 'FaceColor', 'blue', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+% 
 ranH = orth(H);
 ranH = plotPlane(ranH(:,1),ranH(:,2));
 set(ranH, 'FaceColor', 'magenta', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+legend([start(1),finis(1),star,kerP,ranH],{'v_0','v_T','v^*','ker(Pr)','ran(H)'},'fontsize',18,'location','best')
 
-% Set the color and transparency
+xlabel('x')
+ylabel('y')
+zlabel('z')
 
-legend([start(1),finis(1),star,kerP,ranPart,ranH],{'v_0','v_T','v^*','ker(Pr)','ran(Gam0)','ran(H)'},'fontsize',18,'location','best')
-% axis equal
+title('Measurement space')
 
 function plane = plotPlane(v1,v2)
 [u, v] = meshgrid(-1:1, -1:2);
