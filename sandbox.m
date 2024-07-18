@@ -2,33 +2,32 @@ clear; close all; clc
 
 addpath('src/')
 
+rng(42)
+
 % define inverse problem
-H     = [1 0 0; 0 1 0; 0 0 0];
-[n,d] = size(H);
+n = 20;
+d = 50;
+H = rand(n,d);
 LSig = 0.49*rand(n,n);
 Sigma = LSig*LSig';
-truth = rand(n,1);
+truth = rand(d,1);
 m     = H*truth+mvnrnd(zeros(1,n),Sigma)';
-fisher = H'*(Sigma\H);
-Hplus = pinv(fisher)*(H/Sigma);
+Hplus = pinv(H'*(Sigma\H))*(H'/Sigma);
 vstar = Hplus*m;
+iter  = 0;
 
 problem = struct();
-problem = add2struct(problem,H,n,d,Sigma,truth,m,fisher,Hplus,vstar);
+problem = add2struct(problem,H,n,d,Sigma,truth,m,Hplus,vstar,iter);
 
 % initialize particles
-J   = 15;
-vv0 = [rand(1,J); zeros(1,J); 1:J];
+J   = 5;
+vv0 = rand(d,J);
 % EKI iterations
-max_iter  = 1000;
-[vv,vvtilde]   = deal(zeros(d,J,max_iter+1));
-[vv(:,:,1),vvtilde(:,:,1)] = deal(vv0);
-problem.Gi = cov(vv0');
+max_iter  = 2000;
+vv        = zeros(d,J,max_iter+1);
+vv(:,:,1) = vv0;
 for i = 1:max_iter
-    vv(:,:,i+1) = EKIupdate(vv(:,:,i),problem,'stoch','iglesias');
-
-    [vnext,problem] = EKIupdate(vvtilde(:,:,i),problem,'stoch','stoch-simple');
-    vvtilde(:,:,i+1) = vnext;
+    [vv(:,:,i+1),problem] = EKIupdate(vv(:,:,i),problem,'stoch','iglesias');
 end
 
 % define projections
@@ -39,17 +38,6 @@ spdc = specdecomp(H,vv0,Sigma);
 hh    = pagemtimes(H,vv);
 theta = hh-m;
 omega = vv-vstar;
-ht    = pagemtimes(H,vvtilde);
-thetatil = ht - m;
-omegatil = vvtilde-vstar;
-
-%%
-figure(10); clf
-for i = 1:J
-    plotTraj(vv(1,i,:),vv(3,i,:),10,':');
-    plotTraj(vvtilde(1,i,:),vvtilde(3,i,:),10,'-')
-end
-
 
 %%
 meas_projs = {'calPr','calQr','calNr'};

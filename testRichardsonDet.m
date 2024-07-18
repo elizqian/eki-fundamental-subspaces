@@ -20,6 +20,7 @@ problemRichardson = problemDefault;
 % initialize particles
 J   = 15;
 vv0 = [rand(1,J); zeros(1,J); 1:J];
+
 % EKI iterations
 max_iter  = 1000;
 [vvD, vvR] = deal(zeros(d,J,max_iter+1));
@@ -55,6 +56,7 @@ for i = 1:3
     derp = sqrt(squeeze(sum(pagemtimes(spdc.(meas_projs{i}),thetaD).^2,1))');
     if i == 1
         loglog(1:max_iter,max(derp(2,:),[],'all')*1./sqrt(1:max_iter),'Color',[0.5 0.5 0.5]); hold on
+        loglog(1:max_iter,max(derp(2,:),[],'all')*1./(1:max_iter),':','Color',[0.5 0.5 0.5]); hold on
     end
     loglog(0:max_iter,derp,'--','Color',[73 160 242 150]/255)
     ytickformat('%.2f')
@@ -64,6 +66,7 @@ for i = 1:3
     derp = sqrt(squeeze(sum(pagemtimes(spdc.(meas_projs{i}),thetaR).^2,1))');
     if i == 1
         loglog(1:max_iter,max(derp(2,:),[],'all')*1./sqrt(1:max_iter),'Color',[0.5 0.5 0.5]); hold on
+        loglog(1:max_iter,max(derp(2,:),[],'all')*1./(1:max_iter),':','Color',[0.5 0.5 0.5]); hold on
     end
     loglog(0:max_iter,derp,'--','Color',[245 187 42 150]/255)
     ytickformat('%.2f')
@@ -73,6 +76,7 @@ for i = 1:3
     derp = sqrt(squeeze(sum(pagemtimes(spdc.(state_projs{i}),omegaD).^2,1))');
     if i == 1
         loglog(1:max_iter,max(derp(2,:),[],'all')*1./sqrt(1:max_iter),'Color',[0.5 0.5 0.5]); hold on
+        loglog(1:max_iter,max(derp(2,:),[],'all')*1./(1:max_iter),':','Color',[0.5 0.5 0.5]); hold on
     end
     loglog(0:max_iter,derp,'--','Color',[73 160 242 150]/255)
     ytickformat('%.2f')
@@ -82,6 +86,7 @@ for i = 1:3
     derp = sqrt(squeeze(sum(pagemtimes(spdc.(state_projs{i}),omegaR).^2,1))');
     if i == 1
         loglog(1:max_iter,max(derp(2,:),[],'all')*1./sqrt(1:max_iter),'Color',[0.5 0.5 0.5]); hold on
+        loglog(1:max_iter,max(derp(2,:),[],'all')*1./(1:max_iter),':','Color',[0.5 0.5 0.5]); hold on
     end
     loglog(0:max_iter,derp,'--','Color',[245 187 42 150]/255)
     ytickformat('%.2f')

@@ -2,7 +2,7 @@ clear; close all; clc
 
 addpath('src/')
 
-rng(42)
+% rng(42)
 
 % define inverse problem
 n = 20;

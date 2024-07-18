@@ -9,7 +9,7 @@ LSig = 0.49*rand(n,n);
 Sigma = LSig*LSig';
 truth = rand(n,1);
 m     = H*truth+mvnrnd(zeros(1,n),Sigma)';
-Hplus = pinv(H'*(Sigma\H))*(H/Sigma);
+Hplus = pinv(H'*(Sigma\H))*(H'/Sigma);
 vstar = Hplus*m;
 iter  = 0;
 
