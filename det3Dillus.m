@@ -2,9 +2,12 @@ clear; close all; clc
 
 addpath('src/')
 
+rng(42)
+rng(64)
+
+basis = orth(rand(3,3));
 % define inverse problem
-H     = [1 0 0; 0 1 0; 0 0 0];
-% H = eye(3);
+H     = (basis*[1 0 0; 0 1 0; 0 0 0])';
 [n,d] = size(H);
 LSig = 0.49*rand(n,n);
 Sigma = LSig*LSig';
@@ -19,13 +22,14 @@ problem = add2struct(problem,H,n,d,Sigma,truth,m,Hplus,vstar,iter);
 
 % initialize particles
 J   = 15;
-vv0 = [rand(1,J); zeros(1,J); 0.5*randn(1,J)];
+% vv0 = [rand(1,J); zeros(1,J); 0.5*randn(1,J)];
+vv0 = basis(:,[1 3])*0.5*randn(2,J);
 % EKI iterations
 max_iter  = 1000;
 vv        = zeros(d,J,max_iter+1);
 vv(:,:,1) = vv0;
 for i = 1:max_iter
-    vv(:,:,i+1) = EKIupdate(vv(:,:,i),problem,'det','iglesias');
+    vv(:,:,i+1) = EKIupdate(vv(:,:,i),problem,'det','dzh');
 end
 
 % define projections
@@ -110,14 +114,47 @@ legend([start(1),finis(1)],{'v_0','v_T'},'fontsize',18,'location','best')
 
 %%
 figure(4); clf
+
+temp = pagemtimes(spdc.bbPr,vv);
+temp = vv;
 for j = 1:J
-    x = squeeze(vv(1,j,1:10:end));
-    y = squeeze(vv(2,j,1:10:end));
-    z = squeeze(vv(3,j,1:10:end));
+    x = squeeze(temp(1,j,1:10:end));
+    y = squeeze(temp(2,j,1:10:end));
+    z = squeeze(temp(3,j,1:10:end));
     plot3(x,y,z,'k'); hold on
     start = plot3(x(1),y(1),z(1),'r+');
     finis = plot3(x(end),y(end),z(end),'bo');
 end
 star = plot3(vstar(1),vstar(2),vstar(3),'g*');
-legend([start(1),finis(1),star],{'v_0','v_T','v^*'},'fontsize',18,'location','best')
+Pstar = spdc.bbPr*vstar;
+ppstar = plot3(Pstar(1),Pstar(2),Pstar(3),'m*');
+plot3([vstar(1) Pstar(1)],[vstar(2) Pstar(2)],[vstar(3) Pstar(3)],'g:')
 
+kerPr = null(spdc.bbPr);
+kerP = plotPlane(kerPr(:,1),kerPr(:,2));
+set(kerP, 'FaceColor', 'yellow', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+
+ranGam0 = orth(vv0);
+ranPart = plotPlane(ranGam0(:,1),ranGam0(:,2));
+set(ranPart, 'FaceColor', 'blue', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+
+ranH = orth(H);
+ranH = plotPlane(ranH(:,1),ranH(:,2));
+set(ranH, 'FaceColor', 'magenta', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+
+% Set the color and transparency
+
+legend([start(1),finis(1),star,kerP,ranPart,ranH],{'v_0','v_T','v^*','ker(Pr)','ran(Gam0)','ran(H)'},'fontsize',18,'location','best')
+% axis equal
+
+function plane = plotPlane(v1,v2)
+[u, v] = meshgrid(-1:1, -1:2);
+
+% Define the plane using the basis vectors
+X = u * v1(1) + v * v2(1);
+Y = u * v1(2) + v * v2(2);
+Z = u * v1(3) + v * v2(3);
+
+plane = surf(X, Y, Z);
+
+end
