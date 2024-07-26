@@ -1,11 +1,7 @@
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import matplotlib.cm as cm
 from linearEKI import *
-
-plt.rcParams['font.family'] = 'cmr10'
-plt.rcParams['text.usetex'] = True
-plt.rcParams['text.latex.preamble'] = r'\usepackage{amsfonts}'
 
 def style_axes(ax):
     ax.spines['top'].set_visible(False)
@@ -17,72 +13,111 @@ def style_axes(ax):
     ax.xaxis.label.set_color('black')
     ax.title.set_color('black')
 
+def plot_2d_plane(fig,idx,u, v, grid_size=1, col = "gray", label = None,num_points=100):
+    # Define the grid for the plane
+    x = np.linspace(-grid_size, grid_size, num_points)
+    y = np.linspace(-grid_size, grid_size, num_points)
+    x, y = np.meshgrid(x, y)
 
-# np.random.seed(11)
+    # Define the plane using the basis vectors
+    z = u[2] * x + v[2] * y
 
-n = 20
-d = 50
-H = np.random.rand(n,d)
+    # Transform the grid using the basis vectors
+    transformed_x = u[0] * x + v[0] * y
+    transformed_y = u[1] * x + v[1] * y
+    transformed_z = z
 
-# construct a random rank 2 ensemble with one component in range of H and one not in ran(H)
-J = 3
-v0 = np.random.rand(d,J)
+    # Add the 2D plane
+    scl = [[0, col], [1, col]]
+    fig.add_trace(go.Surface(z=transformed_z, x=transformed_x, y=transformed_y, colorscale=scl, opacity=0.5,name=label,showscale=False,showlegend=True),row=1,col=idx)
 
+def plot_line(existing_fig,idx, basis_vector, line_name='Line', color='red', num_points=100):
+    """
+    Plots a line in 3D space given a basis vector.
+
+    Args:
+    basis_vector (list or np.array): Basis vector in the form [x, y, z].
+    existing_fig (go.Figure): Existing Plotly figure to add the line to.
+    line_name (str): Name of the line for the legend.
+    color (str): Color of the line.
+    num_points (int): Number of points along the line.
+    """
+    # Generate points along the line
+    t = np.linspace(-1, 1, num_points)
+    x = basis_vector[0] * t
+    y = basis_vector[1] * t
+    z = basis_vector[2] * t
+
+    # Add the line to the existing figure
+    existing_fig.add_trace(go.Scatter3d(
+        x=x, 
+        y=y, 
+        z=z, 
+        mode='lines',
+        line=dict(color=color, width=3),
+        name=line_name,
+        showlegend=True
+    ),row=1,col=idx)
+
+# SETUP LEAST SQUSRE PROBLEM
+# construct a random 3x3 H with rank 2
+basis,_ = np.linalg.qr(np.random.rand(3,3))
+H = np.hstack((basis[:,:2],np.sum(basis[:,:2],axis=1)[:,np.newaxis])).T
+meas = np.array([0.1, 0.2, 0.3])[:,np.newaxis]
 prob = leastsquares(H=H)
 
-# prob = leastsquares()
-maxiter = 5000
-det = EKI(prob,"det",maxiter,v0 = v0)
-stoch = EKI(prob,"stoch",maxiter,v0 = v0)
+# SETUP EKI ITERATION
+# construct a random rank 2 ensemble with one component in range of H and one not in ran(H)
+J = 15
+th = 2*np.pi*np.random.rand(1,J)
+v0 = basis[:,[0, 2]] @ np.vstack((np.cos(th),np.sin(th)))
 
+maxiter = 100
+det = EKI(prob,"det",maxiter,v0 = v0)
+stoch = EKI(prob,"stoch",maxiter,v0 = det.v0)
+
+# PREP DATA FOR PLOTTING
+x = np.squeeze(det.vv[:,0,:])
+y = np.squeeze(det.vv[:,1,:])
+z = np.squeeze(det.vv[:,2,:])
+
+temp = np.random.rand(3,1)
+q1 = det.bbPr @ temp
+q1 = q1/np.linalg.norm(q1)
+q2 = det.bbQr @ temp
+q2 = q2/np.linalg.norm(q2)
+q3 = det.bbNr @ temp
+q3 = q3/np.linalg.norm(q3)
+
+fig = make_subplots(
+    rows=1, cols=2,
+    specs=[[{'type': 'scatter3d'}, {'type': 'scatter3d'}]],
+    subplot_titles=("State Space", "Measurement Space")
+)
 
 orange = "#FFB320"
 blue   = "#5BA9EF"
-colors = [orange,blue]
-styles = ["solid","dashed","dotted"]
 
-cols = [det, stoch]
-rows = ["misfit","error"]
-projs = [["calPr","calQr","calNr"], ["bbPr","bbQr","bbNr"]]
-lbls  = [["$\\|\\mathcal{P}_r\\theta_i^{(j)}\\|$","$\\|\\mathcal{Q}_r\\theta_i^{(j)}\\|$","$\\|\\mathcal{N}_r\\theta_i^{(j)}\\|$"],["$\\|\\mathbb{P}_r\\omega_i^{(j)}\\|$","$\\|\\mathbb{Q}_r\\omega_i^{(j)}\\|$","$\\|\\mathbb{N}_r\\omega_i^{(j)}\\|$"]]
+vs = det.ls.vstar
+for j in range(J):
+    # plot ensemble
+    if j == 0:
+        sl = True
+    else:
+        sl = False
+    fig.add_trace(go.Scatter3d(x=x[:,j], y=y[:,j], z=z[:,j], mode='lines',line=dict(width=4, color=blue),name="Particle paths",showlegend=sl))
+    fig.add_trace(go.Scatter3d(x=[x[-1,j]], y=[y[-1,j]], z=[z[-1,j]], mode='markers',marker=dict(size=5, color=blue, opacity=0.8),name="path end",showlegend=sl))
+fig.add_trace(go.Scatter3d(x=vs[0], y=vs[1], z=vs[2], mode='markers',marker=dict(size=5, color="black", opacity=0.8),name=r"$v^*$"))
 
-lines = [[],[]]
-
-fig, axs = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(5,3.5))
-
-x = np.arange(maxiter+1)
-xx = np.linspace(1.0001, maxiter+1)
-
-for i in range(2): # row
-    for j in range(2): # column
-        for k in range(3): # linetype
-            y = cols[j].getComponentNorm(rows[i],projs[i][k])
-            if k == 0:
-                scl = np.max(y[1,:])
-            ln = axs[i,j].loglog(x,y,alpha=0.3,color=colors[i],linestyle=styles[k],label=lbls[i][k])
-
-            if j == 0:
-                lines[i].append(ln[0])
-        sqrt = axs[i,j].loglog(xx,scl/np.sqrt(xx),color="grey",alpha=0.8)
-        style_axes(axs[i,j])
-        # axs.set_xlim()
-
-axs[1,0].set_xlabel("Iteration number $i$")
-axs[1,1].set_xlabel("Iteration number $i$")
-axs[0,0].set_ylabel("Measurement space misfit")
-axs[1,0].set_ylabel("State space error")
-axs[0,0].set_title("Deterministic EKI")
-axs[0,1].set_title("Stochastic EKI")
-
-# legend for measurement space row
-axs[0,1].legend(lines[0],lbls[0],loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
-
-# legend for state space row
-axs[1, 1].legend(lines[1],lbls[1],loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
-
-# Legend for a 1/sqrt(i) rate line
-proxy_line = Line2D([0], [0], color='gray', alpha=0.8, label="$1/\\sqrt{i}$ rate")
-fig.legend(handles=[proxy_line], loc='center left', bbox_to_anchor=(0.75, 0.5), frameon=False)
-
-plt.tight_layout()
-fig.savefig("small_ensemble.pdf")
+plot_2d_plane(fig,1,basis[:,0],basis[:,2],grid_size = 1.5,col=blue,label = r"$\textsf{Ran}(\Gamma_i)$")
+plot_2d_plane(fig,1,basis[:,0],basis[:,1],grid_size = 1.5,label = r"$\textsf{Ran}(H^\top)$")
+plot_line(fig,1,q1,line_name=r"$\textsf{Ran}(\mathbb{P}_r)$",color="#214ac4")
+plot_line(fig,1,q2,line_name=r"$\textsf{Ran}(\mathbb{Q}_r)$",color="#e89220")
+plot_line(fig,1,q3,line_name=r"$\textsf{Ran}(\mathbb{N}_r)$",color="#a62216")
+# Update layout for better visualization
+fig.update_layout(scene=dict(
+    xaxis_title='X Axis',
+    yaxis_title='Y Axis',
+    zaxis_title='Z Axis'
+))
+fig.show()
