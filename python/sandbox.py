@@ -1,65 +1,12 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import matplotlib.cm as cm
+import plotly.io as pio
 from linearEKI import *
 
-def style_axes(ax):
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_color('darkgrey')
-    ax.spines['left'].set_color('darkgrey')
-    ax.tick_params(axis='both', which='both', colors='darkgrey')
-    ax.yaxis.label.set_color('black')
-    ax.xaxis.label.set_color('black')
-    ax.title.set_color('black')
-
-def plot_2d_plane(fig,idx,u, v, grid_size=1, col = "gray", label = None,num_points=100):
-    # Define the grid for the plane
-    x = np.linspace(-grid_size, grid_size, num_points)
-    y = np.linspace(-grid_size, grid_size, num_points)
-    x, y = np.meshgrid(x, y)
-
-    # Define the plane using the basis vectors
-    z = u[2] * x + v[2] * y
-
-    # Transform the grid using the basis vectors
-    transformed_x = u[0] * x + v[0] * y
-    transformed_y = u[1] * x + v[1] * y
-    transformed_z = z
-
-    # Add the 2D plane
-    scl = [[0, col], [1, col]]
-    fig.add_trace(go.Surface(z=transformed_z, x=transformed_x, y=transformed_y, colorscale=scl, opacity=0.5,name=label,showscale=False,showlegend=True),row=1,col=idx)
-
-def plot_line(existing_fig,idx, basis_vector, line_name='Line', color='red', num_points=100):
-    """
-    Plots a line in 3D space given a basis vector.
-
-    Args:
-    basis_vector (list or np.array): Basis vector in the form [x, y, z].
-    existing_fig (go.Figure): Existing Plotly figure to add the line to.
-    line_name (str): Name of the line for the legend.
-    color (str): Color of the line.
-    num_points (int): Number of points along the line.
-    """
-    # Generate points along the line
-    t = np.linspace(-1, 1, num_points)
-    x = basis_vector[0] * t
-    y = basis_vector[1] * t
-    z = basis_vector[2] * t
-
-    # Add the line to the existing figure
-    existing_fig.add_trace(go.Scatter3d(
-        x=x, 
-        y=y, 
-        z=z, 
-        mode='lines',
-        line=dict(color=color, width=3),
-        name=line_name,
-        showlegend=True
-    ),row=1,col=idx)
-
-# SETUP LEAST SQUSRE PROBLEM
+###########################################################################
+# CODE TO SET UP AND RUN EKI
+###########################################################################
+# SETUP LEAST SQUARE PROBLEM
 # construct a random 3x3 H with rank 2
 basis,_ = np.linalg.qr(np.random.rand(3,3))
 H = np.hstack((basis[:,:2],np.sum(basis[:,:2],axis=1)[:,np.newaxis])).T
@@ -76,48 +23,195 @@ maxiter = 100
 det = EKI(prob,"det",maxiter,v0 = v0)
 stoch = EKI(prob,"stoch",maxiter,v0 = det.v0)
 
-# PREP DATA FOR PLOTTING
-x = np.squeeze(det.vv[:,0,:])
-y = np.squeeze(det.vv[:,1,:])
-z = np.squeeze(det.vv[:,2,:])
 
-temp = np.random.rand(3,1)
-q1 = det.bbPr @ temp
-q1 = q1/np.linalg.norm(q1)
-q2 = det.bbQr @ temp
-q2 = q2/np.linalg.norm(q2)
-q3 = det.bbNr @ temp
-q3 = q3/np.linalg.norm(q3)
+###########################################################################
+# Plotting
+###########################################################################
+
+# define colors
+orange = "#FFB320"
+blue   = "#5BA9EF"
+cobalt = "#214ac4"
+maroon = "#a62216"
+persimmon = "#e8682c"
+lime = "#86d631"
+
 
 fig = make_subplots(
     rows=1, cols=2,
     specs=[[{'type': 'scatter3d'}, {'type': 'scatter3d'}]],
-    subplot_titles=("State Space", "Measurement Space")
+    subplot_titles=("State Space", "Measurement Space"),
+    horizontal_spacing = 0.1
 )
 
-orange = "#FFB320"
-blue   = "#5BA9EF"
+# Define a function to create line traces with end annotations
+def create_line_trace(x, y, z, name, color):
+    return go.Scatter3d(
+        x=x, y=y, z=z,
+        mode='lines+text',
+        name=name,
+        line=dict(color=color),
+        text=[None, name],
+        textposition='top center',
+        textfont=dict(color=color)
+    )
 
-vs = det.ls.vstar
+def plot_vector3(q, name, color):
+    return go.Scatter3d(
+        x=[0, q[0]], y=[0,q[1]], z=[0,q[2]],
+        mode='lines+text',
+        name=name,
+        line=dict(color=color),
+        text=[None, name],
+        textposition='top center',
+        showlegend=False,
+        textfont=dict(color=color)
+    )
+
+def plot_point3(q, name, color,sym="circle"):
+    return go.Scatter3d(
+        x=[q[0]], y=[q[1]], z=[q[2]],
+        mode='markers+text',
+        # name=name,
+        marker=dict(size=8, color="black", opacity=0.8,symbol=sym),
+        text=[name],
+        textposition='top center',
+        showlegend=False,
+        textfont=dict(color=color)
+    )
+
+def plot_plane(u, v, annotation_text,grid_size=1, color = "gray", label = None,num_points=100):
+    # Define the grid for the plane
+    x = np.linspace(-grid_size, grid_size, num_points)
+    y = np.linspace(-grid_size, grid_size, num_points)
+    x, y = np.meshgrid(x, y)
+
+    # Define the plane using the basis vectors
+    z = u[2] * x + v[2] * y
+
+    # Transform the grid using the basis vectors
+    transformed_x = u[0] * x + v[0] * y
+    transformed_y = u[1] * x + v[1] * y
+    transformed_z = z
+
+    # Add the 2D plane
+    scl = [[0, color], [1, color]]
+    plane = go.Surface(z=transformed_z, x=transformed_x, y=transformed_y, colorscale=scl, opacity=0.5,name=label,showscale=False,showlegend=False)
+
+    text = go.Scatter3d(
+        # x=[(transformed_x[0,0] + transformed_x[-1,-1]) / 2],
+        # y=[(transformed_y[0,0] + transformed_y[-1,-1]) / 2],
+        # z = [(transformed_z[0,0] + transformed_z[-1,-1]) / 2],
+        x=[transformed_x[0,0]],
+        y=[transformed_y[0,0]],
+        z = [transformed_z[0,0]],
+        text=[annotation_text],
+        mode='text',
+        # marker=dict(size=8, color="red", opacity=0.8),
+        textfont=dict(color=color),
+        showlegend=False
+    )
+    return plane, text
+
+# Data for state space
+
+# get unit basis vectors in range of all 3 projectors and plot them 
+temp = np.random.rand(3,1)
+q1 = det.bbPr @ temp
+q1 = np.squeeze(q1/np.linalg.norm(q1))
+q2 = det.bbQr @ temp
+q2 = np.squeeze(q2/np.linalg.norm(q2))
+q3 = det.bbNr @ temp
+q3 = np.squeeze(q3/np.linalg.norm(q3))
+
+lines1 = [
+    plot_vector3(q1,"Ran(Pr)",cobalt),
+    plot_vector3(q2,"Ran(Qr)",persimmon),
+    plot_vector3(q3,"Ran(Nr)",maroon)
+]
+for trace in lines1:
+    fig.add_trace(trace, row=1, col=1)
+x = np.squeeze(det.vv[:,0,:])
+y = np.squeeze(det.vv[:,1,:])
+z = np.squeeze(det.vv[:,2,:])
+vs = np.squeeze(det.ls.vstar)
 for j in range(J):
-    # plot ensemble
     if j == 0:
         sl = True
     else:
         sl = False
-    fig.add_trace(go.Scatter3d(x=x[:,j], y=y[:,j], z=z[:,j], mode='lines',line=dict(width=4, color=blue),name="Particle paths",showlegend=sl))
-    fig.add_trace(go.Scatter3d(x=[x[-1,j]], y=[y[-1,j]], z=[z[-1,j]], mode='markers',marker=dict(size=5, color=blue, opacity=0.8),name="path end",showlegend=sl))
-fig.add_trace(go.Scatter3d(x=vs[0], y=vs[1], z=vs[2], mode='markers',marker=dict(size=5, color="black", opacity=0.8),name=r"$v^*$"))
+    fig.add_trace(go.Scatter3d(x=x[:,j], y=y[:,j], z=z[:,j], mode='lines',line=dict(width=4, color=blue),name="Particle paths",showlegend=sl),row=1,col=1)
+    fig.add_trace(go.Scatter3d(x=[x[-1,j]], y=[y[-1,j]], z=[z[-1,j]], mode='markers',marker=dict(size=5, color=blue, opacity=0.8),name="path end",showlegend=sl),row=1,col=1)
+pln,txt = plot_plane(basis[:,0], basis[:,2], "Ran(Gamma_i)",grid_size=1, color = blue)
+fig.add_trace(pln,row=1,col=1)
+fig.add_trace(txt,row=1,col=1)
+fig.add_trace(plot_point3(vs, "v*", "black",sym="cross"),row=1,col=1)
+pln,txt = plot_plane(basis[:,0], basis[:,1], "Ran(H^T)",grid_size=1, color = orange)
+fig.add_trace(pln,row=1,col=1)
+fig.add_trace(txt,row=1,col=1)
 
-plot_2d_plane(fig,1,basis[:,0],basis[:,2],grid_size = 1.5,col=blue,label = r"$\textsf{Ran}(\Gamma_i)$")
-plot_2d_plane(fig,1,basis[:,0],basis[:,1],grid_size = 1.5,label = r"$\textsf{Ran}(H^\top)$")
-plot_line(fig,1,q1,line_name=r"$\textsf{Ran}(\mathbb{P}_r)$",color="#214ac4")
-plot_line(fig,1,q2,line_name=r"$\textsf{Ran}(\mathbb{Q}_r)$",color="#e89220")
-plot_line(fig,1,q3,line_name=r"$\textsf{Ran}(\mathbb{N}_r)$",color="#a62216")
-# Update layout for better visualization
-fig.update_layout(scene=dict(
-    xaxis_title='X Axis',
-    yaxis_title='Y Axis',
-    zaxis_title='Z Axis'
-))
+# Data for the second scatter plot
+# get unit basis vectors in range of all 3 projectors and plot them 
+temp = np.random.rand(3,1)
+q1 = det.calPr @ temp
+q1 = np.squeeze(q1/np.linalg.norm(q1))
+q2 = det.calQr @ temp
+q2 = np.squeeze(q2/np.linalg.norm(q2))
+q3 = det.calNr @ temp
+q3 = np.squeeze(q3/np.linalg.norm(q3))
+
+lines1 = [
+    plot_vector3(q1,"Ran(Pr)",cobalt),
+    plot_vector3(q2,"Ran(Qr)",persimmon),
+    plot_vector3(q3,"Ran(Nr)",maroon)
+]
+for trace in lines1:
+    fig.add_trace(trace, row=1, col=2)
+hh = det.ls.H[np.newaxis,:,:] @ det.vv
+
+x = np.squeeze(hh[:,0,:])
+y = np.squeeze(hh[:,1,:])
+z = np.squeeze(hh[:,2,:])
+meas = np.squeeze(det.ls.meas)
+for j in range(J):
+    fig.add_trace(go.Scatter3d(x=x[:,j], y=y[:,j], z=z[:,j], mode='lines',line=dict(width=4, color=blue),name="Particle paths",showlegend=False),row=1,col=2)
+    fig.add_trace(go.Scatter3d(x=[x[-1,j]], y=[y[-1,j]], z=[z[-1,j]], mode='markers',marker=dict(size=5, color=blue, opacity=0.8),name="path end",showlegend=False),row=1,col=2)
+fig.add_trace(plot_point3(meas, "m", "black",sym="cross"),row=1,col=2)
+
+# add range of H
+b1 = det.ls.H[:,0]
+b1 = np.squeeze(b1/np.linalg.norm(b1))
+b2 = np.squeeze(det.ls.H[:,1])
+b2 = b2 - ((b1.T @ b2) * b1)
+b2 = np.squeeze(b2/np.linalg.norm(b2))
+pln,txt = plot_plane(b1,b2, "Ran(H)",grid_size=1, color = orange)
+fig.add_trace(pln,row=1,col=2)
+fig.add_trace(txt,row=1,col=2)
+
+
+fig.update_layout(
+        height=600,  # Adjust height as needed
+        showlegend=True,
+        legend=dict(
+            x=0.5,
+            y=0.5,
+            xanchor='center',
+            yanchor='middle',
+            orientation='v'
+        ),
+        scene=dict(
+            xaxis_title='x1',
+            yaxis_title='x2',
+            zaxis_title='x3',
+            aspectmode='cube'
+        ),
+        scene2=dict(
+            xaxis_title='y1',
+            yaxis_title='y2',
+            zaxis_title='y3',
+            aspectmode='cube'
+        )
+    )
+
+pio.write_html(fig, file='subspaces3D.html', auto_open=True)
 fig.show()
