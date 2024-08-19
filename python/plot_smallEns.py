@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from scipy.io import loadmat
 import numpy as np
 from linearEKI import *
 
@@ -25,13 +26,18 @@ d = 50
 H = np.random.rand(n,d)
 
 # construct a random rank 2 ensemble with one component in range of H and one not in ran(H)
-J = 3
+J = 5
 v0 = np.random.rand(d,J)
-
 prob = leastsquares(H=H)
+# temp = loadmat("../sedata.mat")
+# H = temp["H"]
+# Sigma = temp["Sigma"]
+# meas = temp["m"]
+# v0 = temp["vv0"]
+# prob = leastsquares(H=H,Sigma=Sigma,meas=meas)
 
 # prob = leastsquares()
-maxiter = 5000
+maxiter = 10000
 det = EKI(prob,"det",maxiter,v0 = v0)
 stoch = EKI(prob,"stoch",maxiter,v0 = v0)
 
@@ -86,3 +92,15 @@ fig.legend(handles=[proxy_line], loc='center left', bbox_to_anchor=(0.75, 0.5), 
 
 plt.tight_layout()
 fig.savefig("small_ensemble.pdf")
+plt.close()
+
+# fig,ax = plt.subplots(1,1,figsize=(6,4))
+# ax.plot(stoch.W[:,:4])
+
+# # Add labels and title
+# # plt.xlabel('x')
+# # plt.ylabel('y')
+# ax.set_title('first three w')
+# # plt.legend()
+# fig.savefig("temp.pdf")
+# plt.close()

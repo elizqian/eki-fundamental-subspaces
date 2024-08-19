@@ -34,7 +34,7 @@ switch(method)
         if problem.iter <= 3
             Vnext = (eye(d) - K_i*problem.H)*Vnow + K_i*m;
         else
-            Vnext = Vnow + 2*problem.iter*K_i*(m-problem.H*Vnow);
+            Vnext = Vnow + (2*problem.iter)*K_i*(m-problem.H*Vnow);
         end
 
     case 'dzh'

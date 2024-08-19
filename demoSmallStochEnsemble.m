@@ -33,7 +33,6 @@ end
 % define projections
 spdc = specdecomp(H,vv0,Sigma);
 
-
 % post-process
 hh    = pagemtimes(H,vv);
 theta = hh-m;

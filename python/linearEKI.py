@@ -1,6 +1,8 @@
 import numpy as np
 from util_plots import *
 
+def normalize(v):
+    return v/np.linalg.norm(v)
 
 class leastsquares:
     def __init__(self,H=None, Sigma = None, meas = None):
@@ -16,7 +18,6 @@ class leastsquares:
         if Sigma is None:
             Lsig = 0.5*np.random.rand(n,n)
             Sigma = Lsig @ Lsig.T
-            # Sigma = np.array([[1,0.1,0.001],[0.1,4,0.05],[0.001,0.05,16]])
         self.Sigma = Sigma
 
         # set up measurement, min norm pseudoinverse, min norm solution
@@ -26,6 +27,84 @@ class leastsquares:
         self.meas = meas
         self.Hplus = np.linalg.pinv(H.T @ np.linalg.solve(Sigma, H)) @ (np.linalg.solve(Sigma,H).T)
         self.vstar = self.Hplus @ meas
+
+def setupNamedEKI(name,J):
+    if name == "random3D":
+        # n=d=3 case where each fundamental subspace is 1D, and the subspaces are randomly generated
+        basis,_ = np.linalg.qr(np.random.rand(3,3))
+        H = np.hstack((basis[:,:2],np.sum(basis[:,:2],axis=1)[:,np.newaxis])).T
+        v0 = basis[:,[0, 2]] @ np.random.rand(2,J)
+        ls = leastsquares(H=H)
+    elif name == "illustrate3D1D":
+        # n=d=3 case where each fundamental subspace is 1D and things are set up so that the plots are nice-ish
+        basis,_ = np.linalg.qr(np.random.rand(3,3))
+        h1 = normalize(np.array([1,2,1])[:,np.newaxis])
+        h2 = normalize(np.array([2,1,1])[:,np.newaxis])
+        H = np.hstack((h1,h2,np.zeros((3,1))))
+
+        q,_,_ = np.linalg.svd(H.T)
+        q3 = q[:,2][:,np.newaxis]
+
+        meas = 0.8*np.array([-0.5,-0.2,0.3])[:,np.newaxis]
+        Sigma = np.array([[0.3, 0.1, 0.005],[0.1, 0.2, 0.003],[0.005,0.003,0.4]])
+
+        ls = leastsquares(H=H,meas = meas, Sigma = Sigma)
+        th = 2*np.pi*np.random.rand(1,J)
+        v0 = np.cos(th)*h1 + np.sin(th)*q3 
+
+    elif name == "illustrate3D2D":
+        # n=d=3 case where ran(Pr) is 2d, ran(Qr)=0, and ran(Nr) is 1d and things are set up for nice-ish plots
+        h1 = normalize(np.array([1,2,1])[:,np.newaxis])
+        h2 = normalize(np.array([2,1,1])[:,np.newaxis])
+        H = np.hstack((h1,h2,np.zeros((3,1))))
+
+        q,_ = np.linalg.qr(H.T)
+        q1 = q[:,0][:,np.newaxis]
+        q2 = q[:,1][:,np.newaxis]
+        q3 = q[:,2][:,np.newaxis]
+
+        meas = 0.8*np.array([-0.5,-0.2,0.3])[:,np.newaxis]
+        Sigma = np.array([[0.3, 0.1, 0.005],[0.1, 0.2, 0.003],[0.005,0.003,0.4]])
+        ls = leastsquares(H=H,meas = meas, Sigma = Sigma)
+
+        th = 2*np.pi*np.random.rand(1,J)
+        ps = np.pi*np.random.rand(1,J)
+        v0 = np.cos(th)*q1 + np.sin(th)*q3 + np.sin(ps)*q2
+
+    elif name == "randomOver":
+        n = 10
+        d = 5
+        H = np.random.rand(n,d)
+        v = np.random.rand(d,1)
+        v = normalize(v)
+        H = H - H @ (v @ v.T)
+
+        ls = leastsquares(H=H)
+        u,_,_ = np.linalg.svd(H.T)
+        basisV = np.hstack((v,u[:,:d-2]))
+
+        v0 = basisV @ np.random.rand(d-1,J) 
+    return ls,v0
+
+def setupEKI(n,d,J):
+    H = np.random.rand(n,d)
+    v = np.random.rand(d,1)
+    v = normalize(v)
+    H = H - H @ (v @ v.T)
+
+    w = np.random.rand(n,1)
+    w = normalize(w)
+    H = (H.T - H.T @ (w @ w.T)).T
+
+    ls = leastsquares(H=H)
+    u,_,_ = np.linalg.svd(H.T)
+    basisV = np.hstack((v,u[:,:d-2]))
+
+    v0 = basisV @ np.random.rand(d-1,J) 
+    q = H.T[:,0][:,np.newaxis]
+    q = normalize(q)
+    v0 = v0 - (q @ q.T @ v0)
+    return ls,v0
 
 class EKI:
     def __init__(self,lsprob,opt,maxiter,v0=None):
@@ -65,7 +144,8 @@ class EKI:
         if opt == "det":
             m = ls.meas
         elif opt == "stoch":
-            m = ls.meas + np.random.multivariate_normal(np.zeros((ls.n,)),ls.Sigma)[:,np.newaxis]
+            eps = np.random.multivariate_normal(np.zeros((ls.n,)),ls.Sigma,size=(self.J)).T
+            m = ls.meas + eps
         self.v = (np.eye(ls.d) - K @ ls.H) @ self.v + K @ m
     
     def specdecomp(self):
@@ -89,7 +169,8 @@ class EKI:
         W     = W[:,idx]
 
         # normalize first r in-space vectors
-        r = np.sum(np.abs(delta)>1e-10)
+        r = np.sum(np.abs(delta)>1e-6)
+        self.delta = delta
         for i in range(r):
             W[:,i] = W[:,i]/np.sqrt(W[:,i].T @ Sigma @ W[:,i])
         
@@ -97,10 +178,9 @@ class EKI:
         q1,_,_ = np.linalg.svd(np.linalg.solve(Sigma,H))
         q1 = q1[:,:h]
 
-        # compute basis for kernel of H
-        q2,_,_ = np.linalg.svd(H.T)
+        # compute basis for kernel of H.T
+        q2,_,_ = np.linalg.svd(H)
         q2 = q2[:,h:]
-
         
         for ell in range(r,n):
             temp = np.random.rand(n,)
@@ -111,6 +191,8 @@ class EKI:
             for k in range(ell):
                 w = w - ((w.T @ Sigma @ W[:,k]) * W[:,k])
             W[:,ell] = w/np.sqrt(w.T @ Sigma @ w)
+        
+        self.W = W
 
         self.calPr = Sigma @ W[:,:r] @ W[:,:r].T 
         if h > r:

@@ -24,12 +24,6 @@ def plot_vector3(fig,r,c,q, name, color):
         textfont=dict(color=color)
     ),row=r,col=c)
 
-# def plot_basis3(fig,r,c,basis):
-#     names = ["Ran(Pr)","Ran(Qr)","Ran(Nr)"]
-#     colors = [cobalt,persimmon,maroon]
-#     for i in range(3):
-#         plot_vector3(fig,r,c,basis[:,i],names[i],colors[i])
-
 # function to plot points with labels
 def plot_point3(fig,r,c,q, name, color,sym="circle"):
     fig.add_trace(go.Scatter3d(

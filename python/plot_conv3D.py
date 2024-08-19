@@ -17,15 +17,8 @@ def style_axes(ax):
     ax.xaxis.label.set_color('black')
     ax.title.set_color('black')
 
-# construct a random 3x3 H with rank 2
-basis,_ = np.linalg.qr(np.random.rand(3,3))
-H = np.hstack((basis[:,:2],np.sum(basis[:,:2],axis=1)[:,np.newaxis])).T
-
-# construct a random rank 2 ensemble with one component in range of H and one not in ran(H)
 J = 15
-v0 = basis[:,[0, 2]] @ np.random.rand(2,J)
-
-prob = leastsquares(H=H)
+prob,v0 = setupEKI("illustrate3D",J)
 
 # prob = leastsquares()
 maxiter = 1000
