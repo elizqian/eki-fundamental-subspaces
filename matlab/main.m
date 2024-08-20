@@ -48,17 +48,19 @@ theta = hh-m;
 omega = vD-vstar;
 
 %% plot convergence
-orange = [0.9137254901960784, 0.44313725490196076, 0.19607843137254902, 0.3];
-blue   = [0.41568627450980394, 0.7372549019607844, 0.9215686274509803, 0.3];
-gray   = [0.5, 0.5, 0.5, 0.3];
+orange = [0.9137254901960784, 0.44313725490196076, 0.19607843137254902];
+blue   = [0.41568627450980394, 0.7372549019607844, 0.9215686274509803];
+gray   = [0.5, 0.5, 0.5];
 
 EKIs = {vD,vSLarge,vSSmall};
 spdcs = {spdcSmall,spdcLarge,spdcSmall};
 colors = {blue, orange ,gray};
+Js = [Jsmall, J, Jsmall];
 sty = {'-','--',':'};
 obs_projs = {'calP','calQ','calN'};
 state_projs = {'bbP','bbQ','bbN'};
 lbls = {'Deterministic $J = 5$','Stochastic $J = 15$','Stochastic $J = 5$'};
+
 figure(1); clf
 for i = 1:3     % loop through EKI experiments (columns)
     hh = pagemtimes(H,EKIs{i});
@@ -68,32 +70,38 @@ for i = 1:3     % loop through EKI experiments (columns)
 
     % top plot (observation space)
     subplot(2,3,i)
-    lines = [];
+    temp = getComponentNorm(theta,spdc,'calP');
+    lines = loglog(1:max_iter,max(temp(2,:),[],'all')*1./sqrt(1:max_iter),'Color',[0.5 0.5 0.5]); hold on
     for j = 1:3 % loop through subspaces
-        temp = loglog(0:max_iter,getComponentNorm(theta,spdc,obs_projs{j}),sty{j},'Color',colors{j}); hold on
+        temp = loglog(0:max_iter,getComponentNorm(theta,spdc,obs_projs{j}),sty{j},'Color',[colors{j}, 2/Js(i)]); hold on
         lines = [lines, temp(1)];
     end
-    legend(lines,{'$\|\mathbf{\mathcal{P}}\mathbf{\theta}_i^{(j)}\|$',...
-        '$\|\mathbf{\mathcal{Q}}\mathbf{\theta}_i^{(j)}\|$',...
-        '$\|\mathbf{\mathcal{N}}\mathbf{\theta}_i^{(j)}\|$'},...
-        'Location','Best', 'interpreter','latex'); legend boxoff
+    if i == 1
+        legend(lines,{'$1/\sqrt{i}$ rate','$\|\mathbf{\mathcal{P}}\mathbf{\theta}_i^{(j)}\|$',...
+            '$\|\mathbf{\mathcal{Q}}\mathbf{\theta}_i^{(j)}\|$',...
+            '$\|\mathbf{\mathcal{N}}\mathbf{\theta}_i^{(j)}\|$'},...
+            'Location','Best', 'interpreter','latex'); legend boxoff
+        ylabel('Observation space','interpreter','latex')
+    end
     title(lbls{i}, 'interpreter','latex')
 
     % bottom plot (state space)
     subplot(2,3,i+3)
-    lines = [];
+    temp = getComponentNorm(omega,spdc,'bbP');
+    lines = loglog(1:max_iter,max(temp(2,:),[],'all')*1./sqrt(1:max_iter),'Color',[0.5 0.5 0.5]); hold on
     for j = 1:3 % loop through subspaces
-        temp = loglog(0:max_iter,getComponentNorm(omega,spdc,state_projs{j}),sty{j},'Color',colors{j}); hold on
+        temp = loglog(0:max_iter,getComponentNorm(omega,spdc,state_projs{j}),sty{j},'Color',[colors{j}, 2/Js(i)]); hold on
         lines = [lines, temp(1)];
     end
-    legend(lines,{'$\|P\mathbf{\omega}_i^{(j)}\|$',...
-        '$\|Q\mathbf{\omega}_i^{(j)}\|$',...
-        '$\|N\mathbf{\omega}_i^{(j)}\|$'},...
-        'Location','Best', 'interpreter','latex'); legend boxoff
+    if i == 1
+        legend(lines,{'$1/\sqrt{i}$ rate','$\|P\mathbf{\omega}_i^{(j)}\|$',...
+            '$\|Q\mathbf{\omega}_i^{(j)}\|$',...
+            '$\|N\mathbf{\omega}_i^{(j)}\|$'},...
+            'Location','Best', 'interpreter','latex'); legend boxoff
+        ylabel('State space','interpreter','latex')
+    end
 
 end
-subplot(2,3,1); ylabel('Observation space','interpreter','latex')
-subplot(2,3,4); ylabel('State space','interpreter','latex')
 subplot(2,3,5); xlabel('Iteration number $i$','interpreter','latex')
 
 function [compNorm] = getComponentNorm(qoi,spdc,comp)
