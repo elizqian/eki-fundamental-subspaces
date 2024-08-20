@@ -1,13 +1,11 @@
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from scipy.io import loadmat
 import numpy as np
 from linearEKI import *
 
 plt.rcParams['font.family'] = 'cmr10'
 plt.rcParams['text.usetex'] = True
 plt.rcParams['text.latex.preamble'] = r'\usepackage{amsfonts,amsmath}'
-# plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
 def style_axes(ax):
     ax.spines['top'].set_visible(False)
@@ -34,7 +32,6 @@ stochsmall = EKI(prob,"stoch",maxiter,v0 = v0small)
 stochlarge = EKI(prob,"stoch",maxiter,v0=v0)
 
 orange = "#E97132"
-# blue   = "#4595C6"
 blue = "#6ABCEB"
 black  = "#888888"
 colors = [blue,orange,black]
@@ -46,7 +43,6 @@ projs = [["calPr","calQr","calNr"], ["bbPr","bbQr","bbNr"]]
 lbls  = [["$\\|\\boldsymbol{\\mathcal{P}}\\boldsymbol{\\theta}_i^{(j)}\\|$","$\\|\\boldsymbol{\\mathcal{Q}}\\boldsymbol{\\theta}_i^{(j)}\\|$","$\\|\\boldsymbol{\\mathcal{N}}\\theta_i^{(j)}\\|$"],["$\\|\\mathbb{P}\\boldsymbol{\\omega}_i^{(j)}\\|$","$\\|\\mathbb{Q}\\boldsymbol{\\omega}_i^{(j)}\\|$","$\\|\\mathbb{N}\\boldsymbol{\\omega}_i^{(j)}\\|$"]]
 
 lines = [[],[]]
-
 
 fig, axs = plt.subplots(2, 3, sharex='col', sharey='row', figsize=(5.5,4))
 

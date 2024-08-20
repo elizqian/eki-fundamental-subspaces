@@ -4,12 +4,14 @@ import plotly.io as pio
 import numpy as np
 
 # define colors
-orange = "#FFB320"
 blue   = "#5BA9EF"
 cobalt = "#214ac4"
 maroon = "#a62216"
 persimmon = "#e8682c"
 lime = "#86d631"
+orange = "#E97132"
+blue = "#6ABCEB"
+black  = "#222222"
 
 # function to plot vectors with annotations
 def plot_vector3(fig,r,c,q, name, color):
@@ -29,7 +31,39 @@ def plot_point3(fig,r,c,q, name, color,sym="circle"):
     fig.add_trace(go.Scatter3d(
         x=[q[0]], y=[q[1]], z=[q[2]],
         mode='markers+text',
-        marker=dict(size=8, color="black", opacity=0.8,symbol=sym),
+        marker=dict(size=8, color=color, opacity=0.8,symbol=sym),
+        text=[name],
+        textposition='top center',
+        showlegend=False,
+        textfont=dict(color=color)
+    ),row=r,col=c)
+
+def plot_star3(fig,r,c,center,name,color,b1,b2):
+    # orthogonalize basis
+    b1 = b1/np.linalg.norm(b1)
+    b2 = b2 - (b1.T @ b2)* b1 
+    b2 = b2/np.linalg.norm(b2)
+
+    # define coordinates of star
+    scl = 0.1
+    outer_radius = scl*1
+    inner_radius = scl*0.4
+    n_points = 5
+    angles = np.linspace(0, 2 * np.pi, 2 * n_points + 1)
+    points = []
+    for i, angle in enumerate(angles):
+        radius = outer_radius if i % 2 == 0 else inner_radius
+        x = center[0] + radius * (b1[0] * np.cos(angle) + b2[0] * np.sin(angle))
+        y = center[1] + radius * (b1[1] * np.cos(angle) + b2[1] * np.sin(angle))
+        z = center[2] + radius * (b1[2] * np.cos(angle) + b2[2] * np.sin(angle))
+        points.append([x, y, z])
+    x_coords, y_coords, z_coords = zip(*points)
+    
+    # add star to plot
+    fig.add_trace(go.Scatter3d(x=x_coords, y=y_coords, z=z_coords, mode='lines', line=dict(width=2,color=color)),row=r,col=c)
+    fig.add_trace(go.Scatter3d(
+        x=[center[0]], y=[center[1]], z=[center[2]],
+        mode='text',
         text=[name],
         textposition='top center',
         showlegend=False,

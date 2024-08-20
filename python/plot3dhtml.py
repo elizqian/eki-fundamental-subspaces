@@ -12,7 +12,7 @@ from linearEKI import *
 ###########################################################################
 
 J = 15
-prob,v0 = setupEKI("illustrate3D1D",J)
+prob,v0 = setupNamedEKI("illustrate3D1D",J)
 
 maxiter = 100
 det = EKI(prob,"det",maxiter,v0 = v0)

@@ -194,12 +194,12 @@ class EKI:
         
         self.W = W
 
-        self.calPr = Sigma @ W[:,:r] @ W[:,:r].T 
+        self.calP = Sigma @ W[:,:r] @ W[:,:r].T 
         if h > r:
-            self.calQr = Sigma @ W[:,r:h] @ W[:,r:h].T 
+            self.calQ = Sigma @ W[:,r:h] @ W[:,r:h].T 
         else:
-            self.calQr = np.zeros((n,n))
-        self.calNr = np.eye(n) - self.calPr - self.calQr 
+            self.calQ = np.zeros((n,n))
+        self.calN = np.eye(n) - self.calP - self.calQ 
 
         U = np.zeros((d,d))
         for ell in range(h):
@@ -208,12 +208,12 @@ class EKI:
             else:
                 U[:,ell] = Hplus @ Sigma @ W[:,ell]
         
-        self.bbPr = U[:,:r] @ U[:,:r].T @ fisher
+        self.bbP = U[:,:r] @ U[:,:r].T @ fisher
         if h > r:
-            self.bbQr = U[:,r:h] @ U[:,r:h].T @ fisher 
+            self.bbQ = U[:,r:h] @ U[:,r:h].T @ fisher 
         else:
-            self.bbQr = np.zeros((d,d))
-        self.bbNr = np.eye(d) - self.bbPr - self.bbQr
+            self.bbQ = np.zeros((d,d))
+        self.bbN = np.eye(d) - self.bbP - self.bbQ
 
     def getComponentNorm(self,qoi,projName):
         if qoi == "state":
@@ -229,35 +229,6 @@ class EKI:
         comp = proj[np.newaxis,:,:] @ q 
         return np.sqrt(np.sum((comp**2),axis=1))
     
-    # def get3DPlotData(self):
-    #     # this function is only defined for specific dimensions
-
-    #     assert np.linalg.matrix_rank(self.ls.H)==2
-    #     Gam = np.cov(self.v0)
-    #     assert np.linalg.matrix_rank(Gam)==2
-    #     assert np.linalg.matrix_rank(self.bbPr)==1
-
-    #     names = ["Pr","Qr","Nr"]
-    #     basisM = np.zeros((3,3))
-    #     basisS = np.zeros((3,3))
-    #     for j in range(3):
-    #         proj = self.__getattribute__("bb"+names[j])
-    #         temp = proj @ np.random.rand(3)
-    #         basisS[:,j] = temp / np.linalg.norm(temp)
-
-    #         proj = self.__getattribute__("cal"+names[j])
-    #         temp = proj @ np.random.rand(3)
-    #         basisM[:,j] = temp / np.linalg.norm(temp)
-        
-    #     q,_,_ = np.linalg.svd(self.ls.H)
-    #     qH  = q[:,:2]
-    #     q,_,_ = np.linalg.svd(self.ls.H.T)
-    #     qHT = q[:,:2]
-        
-    #     q,_,_ = np.linalg.svd(Gam)
-    #     qGam = q[:,:2]
-    #     return basisM,basisS,qH,qHT,qGam
-    
     def plotSubspaces(self,fig,space):
         if space == "state":
             prefix = "bb"
@@ -265,8 +236,8 @@ class EKI:
         elif space == "measurement":
             prefix = "cal"
             c = 2
-        names = ["Pr","Qr","Nr"]
-        colors = [cobalt,persimmon,maroon]
+        names = ["P","Q","N"]
+        colors = [blue, orange, black]
         for i in range(3):
             proj = self.__getattribute__(prefix+names[i])
             v,sig,_ = np.linalg.svd(proj)
@@ -280,10 +251,6 @@ class EKI:
                 pass
             elif dim == 0:
                 pass
-            # if i == 1:
-            #     print(v)
-        
-
 
     def plot3Dhtml(self,savename):
 
@@ -292,7 +259,6 @@ class EKI:
         assert self.ls.n == 3
 
         # get basis vectors for plotting
-
         fig = make_subplots(
             rows=1, cols=2,
             specs=[[{'type': 'scatter3d'}, {'type': 'scatter3d'}]],
@@ -324,13 +290,14 @@ class EKI:
         
         # left subplot (state space) -- plot particles, vstar, subspaces
         plot_paths(fig,1,1,self.vv,blue,"State particle paths")
-        plot_point3(fig,1,1,np.squeeze(self.ls.vstar), "v*", "black",sym="cross")
+        plot_star3(fig,1,1,np.squeeze(self.ls.vstar), "v*",orange,qHT[:,0],qHT[:,1])
         self.plotSubspaces(fig,"state")
 
         # right subplot (measurement space) -- plot particles, vstar, subspaces
         hh = self.ls.H[np.newaxis,:,:] @ self.vv
         plot_paths(fig,1,2,hh,orange,"Measurement particle paths")
-        plot_point3(fig,1,2,np.squeeze(self.ls.meas), "m", "black",sym="cross")
+        plot_point3(fig,1,2,np.squeeze(self.ls.meas), "y", black,sym="cross")
+        plot_star3(fig,1,2,np.squeeze(self.ls.H @self.ls.vstar), "Hv*",orange,qH[:,0],qH[:,1])
         self.plotSubspaces(fig,"measurement")
 
         fig.update_layout(
@@ -344,9 +311,9 @@ class EKI:
                     orientation='v'
                 ),
                 scene=dict(
-                    xaxis_title='x1',
-                    yaxis_title='x2',
-                    zaxis_title='x3',
+                    xaxis_title='v1',
+                    yaxis_title='v2',
+                    zaxis_title='v3',
                     aspectmode='cube'
                 ),
                 scene2=dict(
