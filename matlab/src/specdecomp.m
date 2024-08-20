@@ -39,13 +39,13 @@ end
 
 spdc.W = W;
 spdc.delta = delta;
-spdc.calPr = Sigma*W(:,1:r)*W(:,1:r)';
+spdc.calP = Sigma*W(:,1:r)*W(:,1:r)';
 if h>r
-    spdc.calQr = Sigma*W(:,r+1:h)*W(:,r+1:h)';
+    spdc.calQ = Sigma*W(:,r+1:h)*W(:,r+1:h)';
 else
-    spdc.calQr = zeros(n,n);
+    spdc.calQ = zeros(n,n);
 end
-spdc.calNr = eye(n) - spdc.calPr - spdc.calQr;
+spdc.calN = eye(n) - spdc.calP - spdc.calQ;
 
 %% state space eigenvector definition and projectors
 
@@ -60,11 +60,11 @@ for ell = 1:h
 end
 
 spdc.U = U;
-spdc.bbPr = U(:,1:r)*U(:,1:r)'*fisher;
+spdc.bbP = U(:,1:r)*U(:,1:r)'*fisher;
 if h > r
-    spdc.bbQr = U(:,r+1:h)*U(:,r+1:h)'*fisher;
+    spdc.bbQ = U(:,r+1:h)*U(:,r+1:h)'*fisher;
 else
-    spdc.bbQr = zeros(d,d);
+    spdc.bbQ = zeros(d,d);
 end
-spdc.bbNr = eye(d) - spdc.bbPr - spdc.bbQr;
+spdc.bbN = eye(d) - spdc.bbP - spdc.bbQ;
 
