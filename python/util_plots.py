@@ -4,7 +4,7 @@ import plotly.io as pio
 import numpy as np
 
 # define colors
-blue   = "#5BA9EF"
+darkblue   = "#1895de"
 cobalt = "#214ac4"
 maroon = "#a62216"
 persimmon = "#e8682c"
@@ -60,7 +60,7 @@ def plot_star3(fig,r,c,center,name,color,b1,b2):
     x_coords, y_coords, z_coords = zip(*points)
     
     # add star to plot
-    fig.add_trace(go.Scatter3d(x=x_coords, y=y_coords, z=z_coords, mode='lines', line=dict(width=2,color=color)),row=r,col=c)
+    fig.add_trace(go.Scatter3d(x=x_coords, y=y_coords, z=z_coords, mode='lines', line=dict(width=3,color=color),showlegend=False),row=r,col=c)
     fig.add_trace(go.Scatter3d(
         x=[center[0]], y=[center[1]], z=[center[2]],
         mode='text',
@@ -100,11 +100,7 @@ def plot_paths(fig,r,c,paths,color,name):
     y = np.squeeze(paths[:,1,:])
     z = np.squeeze(paths[:,2,:])
     for j in range(J):
-        if j == 0:
-            sl = True
-        else:
-            sl = False
-        line = go.Scatter3d(x=x[:,j], y=y[:,j], z=z[:,j], mode='lines',line=dict(width=2, color=color),name=name,showlegend=sl)
+        line = go.Scatter3d(x=x[:,j], y=y[:,j], z=z[:,j], mode='lines',line=dict(width=3, color=color,dash="dot"),name=name,showlegend=False)
         u = x[-1,j] - x[-2,j]
         v = y[-1,j] - y[-2,j]
         w = z[-1,j] - z[-2,j]

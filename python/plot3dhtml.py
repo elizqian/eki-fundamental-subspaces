@@ -11,8 +11,8 @@ from linearEKI import *
 # CODE TO SET UP AND RUN EKI
 ###########################################################################
 
-J = 15
-prob,v0 = setupNamedEKI("illustrate3D1D",J)
+J = 8
+prob,v0 = setupNamedEKI("paperMatch",J)
 
 maxiter = 100
 det = EKI(prob,"det",maxiter,v0 = v0)

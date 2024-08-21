@@ -71,19 +71,20 @@ def setupNamedEKI(name,J):
         ps = np.pi*np.random.rand(1,J)
         v0 = np.cos(th)*q1 + np.sin(th)*q3 + np.sin(ps)*q2
 
-    elif name == "randomOver":
-        n = 10
-        d = 5
-        H = np.random.rand(n,d)
-        v = np.random.rand(d,1)
-        v = normalize(v)
-        H = H - H @ (v @ v.T)
+    elif name == "paperMatch":
+        n = 3
+        d = 3
+        H = np.array( [[1, 0, 0],[0, 1, 0],[0, 0,  0]])
+        v1 = np.array([0,1,0])
+        v2 = np.array([0,0,1])
+        
+        th = 2*np.pi*np.random.rand(J,1)
+        v0 = (np.cos(th) * v1 + np.sin(th) * v2).T
 
-        ls = leastsquares(H=H)
-        u,_,_ = np.linalg.svd(H.T)
-        basisV = np.hstack((v,u[:,:d-2]))
+        meas = np.array([0.75, 0.25, 0.5])[:,np.newaxis]
+        # Sigma = np.array([[0.45951155, 0.22958299, 0.32095932],       [0.22958299, 0.27617495, 0.2561246 ],       [0.32095932, 0.2561246 , 0.42785381]])
+        ls = leastsquares(H=H,meas=meas)
 
-        v0 = basisV @ np.random.rand(d-1,J) 
     return ls,v0
 
 def setupEKI(n,d,J):
@@ -168,6 +169,8 @@ class EKI:
         delta = delta[idx]
         W     = W[:,idx]
 
+        self.delta = delta
+
         # normalize first r in-space vectors
         r = np.sum(np.abs(delta)>1e-6)
         self.delta = delta
@@ -232,17 +235,19 @@ class EKI:
     def plotSubspaces(self,fig,space):
         if space == "state":
             prefix = "bb"
-            c = 1
+            c = 2
         elif space == "measurement":
             prefix = "cal"
-            c = 2
+            c = 1
         names = ["P","Q","N"]
-        colors = [blue, orange, black]
+        colors = [darkblue, orange, black]
         for i in range(3):
             proj = self.__getattribute__(prefix+names[i])
             v,sig,_ = np.linalg.svd(proj)
             dim = sum(sig>1e-8)
             v = np.squeeze(v[:,:dim])
+            if v[i] < 0:
+                v = -v
             if dim == 1:
                 plot_vector3(fig,1,c,v,"Ran("+names[i]+")",colors[i])
             elif dim == 2:
@@ -262,7 +267,7 @@ class EKI:
         fig = make_subplots(
             rows=1, cols=2,
             specs=[[{'type': 'scatter3d'}, {'type': 'scatter3d'}]],
-            subplot_titles=("State Space", "Measurement Space"),
+            subplot_titles=("Observation Space", "State Space"),
             horizontal_spacing = 0.1
         )
 
@@ -272,11 +277,11 @@ class EKI:
         qH  = qH[:,:h]
         qHT = qHT[:,:h]
         if h == 2: # plot planes
-            plot_plane(fig,1,1,qHT[:,0], qHT[:,1], "Ran(H^T)",grid_size=1, color = orange)
-            plot_plane(fig,1,2,qH[:,0],qH[:,1], "Ran(H)",grid_size=1, color = orange)
+            plot_plane(fig,1,2,qHT[:,0], qHT[:,1], "Ran(H^T)",grid_size=1, color = orange)
+            plot_plane(fig,1,1,qH[:,0],qH[:,1], "Ran(H)",grid_size=1, color = orange)
         elif h == 1: # plot vectors
-            plot_vector3(fig,1,1,qHT,"Ran(H^T)",color=orange)
-            plot_vector3(fig,1,2,qH,"Ran(H)",color=orange)
+            plot_vector3(fig,1,2,qHT,"Ran(H^T)",color=orange)
+            plot_vector3(fig,1,1,qH,"Ran(H)",color=orange)
         
         # plot range of Gamma_i
         Gam = np.cov(self.v0)
@@ -284,20 +289,24 @@ class EKI:
         g = sum(sigG>1e-8)
         qG = qG[:,:g]
         if g == 2:
-            plot_plane(fig,1,1,qG[:,0],qG[:,1],"Ran(Gamma_i)",grid_size=1,color=blue)
+            plot_plane(fig,1,2,qG[:,0],qG[:,1],"Ran(Gamma_i)",grid_size=1,color=blue)
         elif g == 1:
-            plot_vector3(fig,1,1,qG,"Ran(Gamma_i)",color=blue)
+            plot_vector3(fig,1,2,qG,"Ran(Gamma_i)",color=blue)
         
-        # left subplot (state space) -- plot particles, vstar, subspaces
-        plot_paths(fig,1,1,self.vv,blue,"State particle paths")
-        plot_star3(fig,1,1,np.squeeze(self.ls.vstar), "v*",orange,qHT[:,0],qHT[:,1])
+        vEKI = np.mean(self.vv[-1,:,:],axis=1)
+        # right subplot (state space) -- plot particles, vstar, subspaces
+        plot_paths(fig,1,2,self.vv,blue,"State particle paths")
+        plot_star3(fig,1,2,np.squeeze(self.ls.vstar), "v*",orange,qHT[:,0],qHT[:,1])
+        plot_star3(fig,1,2,np.squeeze(self.bbP @ self.ls.vstar), "Pv*",darkblue,qG[:,0],qG[:,1])
+        
         self.plotSubspaces(fig,"state")
 
-        # right subplot (measurement space) -- plot particles, vstar, subspaces
+        # left subplot (measurement space) -- plot particles, vstar, subspaces
         hh = self.ls.H[np.newaxis,:,:] @ self.vv
-        plot_paths(fig,1,2,hh,orange,"Measurement particle paths")
-        plot_point3(fig,1,2,np.squeeze(self.ls.meas), "y", black,sym="cross")
-        plot_star3(fig,1,2,np.squeeze(self.ls.H @self.ls.vstar), "Hv*",orange,qH[:,0],qH[:,1])
+        plot_paths(fig,1,1,hh,blue,"Observation particle paths")
+        plot_point3(fig,1,1,np.squeeze(self.ls.meas), "y", black,sym="cross")
+        plot_star3(fig,1,1,np.squeeze(self.ls.H @self.ls.vstar), "Hv*",orange,qH[:,0],qH[:,1])
+        plot_star3(fig,1,1,np.squeeze(self.ls.H @ vEKI), "H(v_EKI)",darkblue,qH[:,0],qH[:,1])
         self.plotSubspaces(fig,"measurement")
 
         fig.update_layout(
@@ -311,15 +320,15 @@ class EKI:
                     orientation='v'
                 ),
                 scene=dict(
-                    xaxis_title='v1',
-                    yaxis_title='v2',
-                    zaxis_title='v3',
-                    aspectmode='cube'
-                ),
-                scene2=dict(
                     xaxis_title='y1',
                     yaxis_title='y2',
                     zaxis_title='y3',
+                    aspectmode='cube'
+                ),
+                scene2=dict(
+                    xaxis_title='v1',
+                    yaxis_title='v2',
+                    zaxis_title='v3',
                     aspectmode='cube'
                 ),
             )

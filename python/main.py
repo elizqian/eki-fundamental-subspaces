@@ -39,7 +39,7 @@ styles = ["solid","dashed","dotted"]
 
 cols = [det, stochlarge,stochsmall]
 rows = ["misfit","error"]
-projs = [["calPr","calQr","calNr"], ["bbPr","bbQr","bbNr"]]
+projs = [["calP","calQ","calN"], ["bbP","bbQ","bbN"]]
 lbls  = [["$\\|\\boldsymbol{\\mathcal{P}}\\boldsymbol{\\theta}_i^{(j)}\\|$","$\\|\\boldsymbol{\\mathcal{Q}}\\boldsymbol{\\theta}_i^{(j)}\\|$","$\\|\\boldsymbol{\\mathcal{N}}\\theta_i^{(j)}\\|$"],["$\\|\\mathbb{P}\\boldsymbol{\\omega}_i^{(j)}\\|$","$\\|\\mathbb{Q}\\boldsymbol{\\omega}_i^{(j)}\\|$","$\\|\\mathbb{N}\\boldsymbol{\\omega}_i^{(j)}\\|$"]]
 
 lines = [[],[]]
@@ -81,5 +81,5 @@ proxy_line = Line2D([0], [0], color='#555555', alpha=0.8, label="$1/\\sqrt{i}$ r
 fig.legend(handles=[proxy_line], loc='center left', bbox_to_anchor=(0.75, 0.485), frameon=False,handletextpad=0.2,fontsize=12)
 
 plt.subplots_adjust(top=0.88,right=0.98,left=0.13,bottom=0.1,hspace=0.7,wspace=0.1)
-fig.savefig("temp.pdf")
+fig.savefig("EKIconvergence.pdf")
 plt.close()
