@@ -22,5 +22,7 @@ stoch = EKI(prob,"stoch",maxiter,v0 = det.v0)
 # Plotting
 ###########################################################################
 
-det.plot3Dhtml("deterministic3d.html")
-stoch.plot3Dhtml("stochastic3D.html")
+det.plot3Dhtml("deterministic3d.html","<b>Deterministic EKI</b>")
+stoch.plot3Dhtml("stochastic3D.html","<b>Stochastic EKI</b>")
+
+# stoch.plot3Dhtml("temp.html","<b>Test</b>")

@@ -100,6 +100,10 @@ def plot_paths(fig,r,c,paths,color,name):
     y = np.squeeze(paths[:,1,:])
     z = np.squeeze(paths[:,2,:])
     for j in range(J):
+        if j == 1:
+            sl = True
+        else:
+            sl = False
         line = go.Scatter3d(x=x[:,j], y=y[:,j], z=z[:,j], mode='lines',line=dict(width=3, color=color,dash="dot"),name=name,showlegend=False)
         u = x[-1,j] - x[-2,j]
         v = y[-1,j] - y[-2,j]

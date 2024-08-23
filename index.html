@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fundamental Subspaces of EKI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            margin: 20px 0;
+            max-width: 1000px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 0;
+            color: #222;
+        }
+        p {
+            font-size: 1.2em;
+            /* max-width: 1000px; */
+            text-align: left;
+            line-height: 1.5em;
+            margin: 20px 0;
+        }
+        section {
+        width: 100%;
+        max-width: 1000px;
+        background-color: #f4f4f4; /* Same background color as the page */
+    }
+    a {
+    color: #007BFF; /* A subtle blue color for the link */
+    text-decoration: none; /* Remove the underline */
+    transition: color 0.3s ease; /* Smooth transition for color changes */
+    }
+
+    a:hover {
+        color: #0056b3; /* Darker blue on hover */
+        text-decoration: underline; /* Underline the link on hover */
+    }
+    .plotly-container {
+            width: 100%;
+            height: 100vh; /* Full height of the viewport */
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>The Fundamental Subspaces of <br> Ensemble Kalman Inversion</h1>
+    <div id="authors" style="font-size: 1.3em; color: #666; text-align: center; margin-bottom: 20px; margin-top: 20px">
+        <a href = "https://www.elizabethqian.com">Elizabeth Qian</a> (Georgia Tech) and <a href=""https://math.vt.edu/people/faculty/beattie-christopher.html>Christopher Beattie</a> (Virginia Tech)
+    </div>
+    <p>This page contains interactive 3D visualizations of the fundamental subspaces of Ensemble Kalman Inversion described in our paper for a fixed inverse problem and ensemble initialization.</p>
+</header>
+
+
+<section>
+    <div class="links">
+        Particle paths are plotted in light blue with conical arrowheads at the end of the path (note that in observation space they move in 1D in this example, but you can see the arrowheads clustered around the EKI solution). 
+        <a id="toggle-link" onclick="togglePlot()">Toggle Stochastic/Deterministic Paths</a>
+    </div>
+    <div class="plotly-container">
+        <iframe id="plot-iframe" src="python/deterministic3d.html" style="border: none; width:100%;  "></iframe>
+    </div>
+    
+</section>
+
+<script>
+    function loadPlot(plot) {
+        document.getElementById('plot-iframe').src = plot;
+    }
+</script>
+
+<script>
+    let currentPlot = 2;
+
+    function togglePlot() {
+        const iframe = document.getElementById('plot-iframe');
+        const link = document.getElementById('toggle-link');
+
+        if (currentPlot === 1) {
+            iframe.src = 'python/stochastic3d.html';
+            // link.textContent = 'Toggle Stochastic/Deterministic Paths';
+            currentPlot = 2;
+        } else {
+            iframe.src = 'python/deterministic3d.html';
+            // link.textContent = 'Toggle Stochastic/Deterministic Paths';
+            currentPlot = 1;
+        }
+    }
+</script>
+
+</body>
+</html>
+

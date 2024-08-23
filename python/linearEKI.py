@@ -257,7 +257,7 @@ class EKI:
             elif dim == 0:
                 pass
 
-    def plot3Dhtml(self,savename):
+    def plot3Dhtml(self,savename,title):
 
         # we only generate 3D plots for 3D problems
         assert self.ls.d == 3
@@ -331,6 +331,12 @@ class EKI:
                     zaxis_title='v3',
                     aspectmode='cube'
                 ),
+                title={
+                'text': title,
+                'x': 0.5,  # Center the title
+                'xanchor': 'center',  # Anchor the title at the center
+                'yanchor': 'top'
+            }
             )
 
         pio.write_html(fig, file=savename, auto_open=True)
