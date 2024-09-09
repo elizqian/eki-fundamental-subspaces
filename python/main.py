@@ -3,6 +3,31 @@ from matplotlib.lines import Line2D
 import numpy as np
 from linearEKI import *
 
+##############################
+# set EKI example
+##############################
+np.random.seed(0)   # for reproducibility of plots in paper
+
+n = 8   # number of observations
+d = 12  # number of states
+J = 40  # number of particles in the large ensemble
+
+# this function sets up a random LS problem and EKI initial ensemble whose fundamental subspaces are all non-trivial
+prob,v0 = setupEKI(n,d,J)   
+v0small = v0[:,:5]      # use just the first 5 particles for small ensemble tests
+
+##############################
+# run EKI 
+##############################
+maxiter = 1000
+det = EKI(prob,"det",maxiter,v0 = v0small)          # deterministic
+stochsmall = EKI(prob,"stoch",maxiter,v0 = v0small) # stochastic small ensemble
+stochlarge = EKI(prob,"stoch",maxiter,v0=v0)        # stoch large ensemble
+
+
+##############################
+# plotting setup and plot
+##############################
 plt.rcParams['font.family'] = 'cmr10'
 plt.rcParams['text.usetex'] = True
 plt.rcParams['text.latex.preamble'] = r'\usepackage{amsfonts,amsmath}'
@@ -17,20 +42,6 @@ def style_axes(ax):
     ax.xaxis.label.set_color('black')
     ax.title.set_color('black')
 
-n = 8
-d = 12
-
-J = 40
-
-
-prob,v0 = setupEKI(n,d,J)
-v0small = v0[:,:5]
-
-maxiter = 1000
-det = EKI(prob,"det",maxiter,v0 = v0small)
-stochsmall = EKI(prob,"stoch",maxiter,v0 = v0small)
-stochlarge = EKI(prob,"stoch",maxiter,v0=v0)
-
 orange = "#E97132"
 blue = "#6ABCEB"
 black  = "#888888"
@@ -40,7 +51,7 @@ styles = ["solid","dashed","dotted"]
 cols = [det, stochlarge,stochsmall]
 rows = ["misfit","error"]
 projs = [["calP","calQ","calN"], ["bbP","bbQ","bbN"]]
-lbls  = [["$\\|\\boldsymbol{\\mathcal{P}}\\boldsymbol{\\theta}_i^{(j)}\\|$","$\\|\\boldsymbol{\\mathcal{Q}}\\boldsymbol{\\theta}_i^{(j)}\\|$","$\\|\\boldsymbol{\\mathcal{N}}\\theta_i^{(j)}\\|$"],["$\\|\\mathbb{P}\\boldsymbol{\\omega}_i^{(j)}\\|$","$\\|\\mathbb{Q}\\boldsymbol{\\omega}_i^{(j)}\\|$","$\\|\\mathbb{N}\\boldsymbol{\\omega}_i^{(j)}\\|$"]]
+lbls  = [["$\\|\\boldsymbol{\\mathcal{P}}\\boldsymbol{\\theta}_i^{(j)}\\|$","$\\|\\boldsymbol{\\mathcal{Q}}\\boldsymbol{\\theta}_i^{(j)}\\|$","$\\|\\boldsymbol{\\mathcal{N}}\\boldsymbol{\\theta}_i^{(j)}\\|$"],["$\\|\\mathbb{P}\\boldsymbol{\\omega}_i^{(j)}\\|$","$\\|\\mathbb{Q}\\boldsymbol{\\omega}_i^{(j)}\\|$","$\\|\\mathbb{N}\\boldsymbol{\\omega}_i^{(j)}\\|$"]]
 
 lines = [[],[]]
 
@@ -51,14 +62,14 @@ xx = np.linspace(1.0001, maxiter+1)
 
 for i in range(2): # row
     for j in range(3): # column
-        for k in [2,1,0]: # linetype
+        for k in [1,2,0]: # linetype
             y = cols[j].getComponentNorm(rows[i],projs[i][k])
             if k == 0:
                 scl = np.max(y[1,:])
             ln = axs[i,j].loglog(x,y,alpha=0.3,color=colors[k],linestyle=styles[k],label=lbls[i][k])
-
+            prox = Line2D([0], [0], color=colors[k],linestyle=styles[k], label=lbls[i][k])
             if j == 0:
-                lines[i].append(ln[0])
+                lines[i].append(prox)
         sqrt = axs[i,j].loglog(xx,scl/np.sqrt(xx),color="#555555",alpha=0.8)
         style_axes(axs[i,j])
 
@@ -69,10 +80,10 @@ axs[1,0].set_ylabel("State space\n residual",fontsize=12,labelpad=1)
 axs[0,1].set_title("(Large ensemble)",pad=1)
 axs[0,2].set_title("(Small ensemble)",pad=1)
 fig.text(0.7, 0.95, 'Stochastic EKI', ha='center', fontsize=13)
-fig.text(0.3, 0.95, 'Deterministic EKI', ha='center', fontsize=13)
+fig.text(0.27, 0.95, 'Deterministic EKI', ha='center', fontsize=13)
 
-# # legend for measurement space row
-lines_all = [lines[0][2],lines[1][2],lines[0][1],lines[1][1],lines[0][0],lines[1][0]]
+# legend
+lines_all = [lines[0][2],lines[1][2],lines[0][0],lines[1][0],lines[0][1],lines[1][1]]
 lbls_all  = [lbls[0][0],lbls[1][0],lbls[0][1],lbls[1][1],lbls[0][2],lbls[1][2]]
 axs[0,0].legend(lines_all,lbls_all,loc='lower left',bbox_to_anchor=(-0.1,-0.7),ncols=3,frameon=False,fontsize=12,handletextpad=0.2,columnspacing = 1)
 

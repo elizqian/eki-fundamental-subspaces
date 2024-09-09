@@ -82,7 +82,6 @@ def setupNamedEKI(name,J):
         v0 = (np.cos(th) * v1 + np.sin(th) * v2).T
 
         meas = np.array([0.75, 0.25, 0.5])[:,np.newaxis]
-        # Sigma = np.array([[0.45951155, 0.22958299, 0.32095932],       [0.22958299, 0.27617495, 0.2561246 ],       [0.32095932, 0.2561246 , 0.42785381]])
         ls = leastsquares(H=H,meas=meas)
 
     return ls,v0
@@ -99,12 +98,9 @@ def setupEKI(n,d,J):
 
     ls = leastsquares(H=H)
     u,_,_ = np.linalg.svd(H.T)
-    basisV = np.hstack((v,u[:,:d-2]))
+    basisV = np.hstack((v,u[:,1:d-2]))
 
-    v0 = basisV @ np.random.rand(d-1,J) 
-    q = H.T[:,0][:,np.newaxis]
-    q = normalize(q)
-    v0 = v0 - (q @ q.T @ v0)
+    v0 = basisV @ np.random.rand(d-2,J) 
     return ls,v0
 
 class EKI:
