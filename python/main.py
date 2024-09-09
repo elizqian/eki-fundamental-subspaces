@@ -80,7 +80,7 @@ axs[1,0].set_ylabel("State space\n residual",fontsize=12,labelpad=1)
 axs[0,1].set_title("(Large ensemble)",pad=1)
 axs[0,2].set_title("(Small ensemble)",pad=1)
 fig.text(0.7, 0.95, 'Stochastic EKI', ha='center', fontsize=13)
-fig.text(0.27, 0.95, 'Deterministic EKI', ha='center', fontsize=13)
+fig.text(0.26, 0.95, 'Deterministic EKI', ha='center', fontsize=13)
 
 # legend
 lines_all = [lines[0][2],lines[1][2],lines[0][0],lines[1][0],lines[0][1],lines[1][1]]
