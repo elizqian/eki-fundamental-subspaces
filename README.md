@@ -2,11 +2,12 @@
 
 This repository contains code for the numerical results of the following paper:
 
-1. E. Qian and C. Beattie, The Fundamental Subspaces of Ensemble Kalman Inversion. Submitted 2024. 
+1. E. Qian and C. Beattie, The Fundamental Subspaces of Ensemble Kalman Inversion. [arXiv:2409.08862](https://arxiv.org/abs/2409.08862) 2024. 
  <details><summary>BibTeX</summary><pre>
 @article{Qian2024fundamentalEKI
     title   = {The Fundamental Subspaces of Ensemble Kalman Inversion},
     author  = {Qian, E. and Beattie, C.},
+    journal = {arXiv:2409.08862},
     year    = {2024},
 }</pre></details>
 
