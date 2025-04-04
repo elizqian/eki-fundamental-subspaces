@@ -18,7 +18,7 @@ def style_axes(ax):
     ax.xaxis.label.set_color('black')
     ax.title.set_color('black')
 
-with open("seed2_5000.pkl","rb") as f:
+with open("results.pkl","rb") as f:
     eki_runs = pickle.load(f)
 
 detlarge   = eki_runs[0]
@@ -54,20 +54,25 @@ for i in range(2): # row
     for j in range(4): # column
         for k in [2,1,0]: # linetype
             y = cols[j].components[:,i*3+k,:50]
+            
+            ln = axs[i,j].loglog(x,y,alpha=0.3,color=colors[k],linestyle=styles[k],label=lbls[i][k])
+
             if i == 0:
                 scl = 50
             else:
                 scl = 5
-            ln = axs[i,j].loglog(x,y,alpha=0.3,color=colors[k],linestyle=styles[k],label=lbls[i][k])
-
+                
             if j == 0:
                 lines[i].append(ln[0])
+
         sqrt = axs[i,j].loglog(xx,scl/np.sqrt(xx),color="#555555",alpha=0.8)
         style_axes(axs[i,j])
-
+    
+for j in range(4):
+    axs[1,j].set_xticks([1,1e2,1e4],["1","100",r"$10^4$"])
 
 fig.text(0.55,0.01,"Iteration number $i$",fontsize=12,ha='center')
-axs[0,0].set_ylabel("Measurement misfit",fontsize=12,labelpad=8)
+axs[0,0].set_ylabel("Data misfit",fontsize=12,labelpad=7)
 axs[1,0].set_ylabel("State residual",fontsize=12,labelpad=1)
 for i in range(4):
     axs[0,i].set_title(coltitles[i],pad=1,fontsize=10.5)
@@ -78,6 +83,8 @@ fig.text(0.34, 0.95, 'Large ensemble', ha='center', fontsize=13)
 lines_all = [lines[0][2],lines[1][2],lines[0][1],lines[1][1],lines[0][0],lines[1][0]]
 lbls_all  = [lbls[0][0],lbls[1][0],lbls[0][1],lbls[1][1],lbls[0][2],lbls[1][2]]
 axs[0,0].legend(lines_all,lbls_all,loc='lower left',bbox_to_anchor=(-0.1,-0.7),ncols=3,frameon=False,fontsize=12,handletextpad=0.2,columnspacing = 1)
+
+
 
 # Legend for a 1/sqrt(i) rate line
 proxy_line = Line2D([0], [0], color='#555555', alpha=0.8, label="$1/\\sqrt{i}$ rate")
