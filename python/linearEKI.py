@@ -1,5 +1,6 @@
 import numpy as np
 from util_plots import *
+import time
 
 def normalize(v):
     return v/np.linalg.norm(v)
@@ -82,6 +83,7 @@ def setupNamedEKI(name,J):
         v0 = (np.cos(th) * v1 + np.sin(th) * v2).T
 
         meas = np.array([0.75, 0.25, 0.5])[:,np.newaxis]
+        # Sigma = np.array([[0.45951155, 0.22958299, 0.32095932],       [0.22958299, 0.27617495, 0.2561246 ],       [0.32095932, 0.2561246 , 0.42785381]])
         ls = leastsquares(H=H,meas=meas)
 
     return ls,v0
@@ -98,9 +100,12 @@ def setupEKI(n,d,J):
 
     ls = leastsquares(H=H)
     u,_,_ = np.linalg.svd(H.T)
-    basisV = np.hstack((v,u[:,1:d-2]))
+    basisV = np.hstack((v,u[:,:d-2]))
 
-    v0 = basisV @ np.random.rand(d-2,J) 
+    v0 = basisV @ np.random.rand(d-1,J) 
+    q = H.T[:,0][:,np.newaxis]
+    q = normalize(q)
+    v0 = v0 - (q @ q.T @ v0)
     return ls,v0
 
 class EKI:
@@ -120,18 +125,37 @@ class EKI:
         # add LS problem details to object
         self.ls = lsprob
 
-        # initialize storage for iteration and iteration counter
-        vv = np.zeros((maxiter+1,d,J))
-        vv[0,:,:] = v0
+        start = time.time()
+        self.specdecomp()
+        print('Spectral decomposition complete in '+str(time.time()-start)+' seconds.')
+
+        # initialize storage for subspace components
+        Jstore = np.minimum(J,1000)
+        components = np.zeros((maxiter+1,6,Jstore))
+        errs = np.zeros((maxiter+1,6,2))
+        compnames = ["calP","calQ","calN","bbP","bbQ","bbN"]
+        qoinames  = ["misfit","misfit","misfit","error","error","error"]
+        for j in range(6):
+            temp = self.getComponentNorm(qoinames[j],compnames[j])
+            components[0,j,:Jstore] = temp[:,:Jstore]
+            errs[0,j,:] = [np.mean(temp), np.mean(temp**2)]
 
         # run iteration
+        start = time.time()
+        print("Starting EKI updates...")
         for i in range(maxiter):
             self.update(opt)
-            vv[i+1,:,:] = self.v
-        
-        self.vv = vv
+            for j in range(6):
+                temp = self.getComponentNorm(qoinames[j],compnames[j])
+                components[i+1,j,:Jstore] = temp[:,:Jstore]
+                errs[i+1,j,:] = [np.mean(temp), np.mean(temp**2)]
+            if np.mod(i,100)==0:
+                end = time.time()
+                print('Iteration '+str(i)+' of '+str(maxiter)+": "+str(end-start))
+        print('Iteration complete: '+str(time.time()-start))
 
-        self.specdecomp()
+        self.components = components
+        self.errs = errs
 
     def update(self,opt):
         ls = self.ls
@@ -216,13 +240,13 @@ class EKI:
 
     def getComponentNorm(self,qoi,projName):
         if qoi == "state":
-            q = self.vv
+            q = self.v
         elif qoi == "meas":
-            q = self.ls.H[np.newaxis,:,:] @ self.vv 
+            q = self.ls.H[np.newaxis,:,:] @ self.v
         elif qoi == "error":
-            q = self.vv - self.ls.vstar
+            q = self.v - self.ls.vstar
         elif qoi == "misfit":
-            q = self.ls.H[np.newaxis,:,:] @ self.vv - self.ls.meas
+            q = self.ls.H[np.newaxis,:,:] @ self.v - self.ls.meas
         
         proj = self.__getattribute__(projName)
         comp = proj[np.newaxis,:,:] @ q 
@@ -253,7 +277,7 @@ class EKI:
             elif dim == 0:
                 pass
 
-    def plot3Dhtml(self,savename):
+    def plot3Dhtml(self,savename,title):
 
         # we only generate 3D plots for 3D problems
         assert self.ls.d == 3
@@ -327,6 +351,12 @@ class EKI:
                     zaxis_title='v3',
                     aspectmode='cube'
                 ),
+                title={
+                'text': title,
+                'x': 0.5,  # Center the title
+                'xanchor': 'center',  # Anchor the title at the center
+                'yanchor': 'top'
+            }
             )
 
         pio.write_html(fig, file=savename, auto_open=True)

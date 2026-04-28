@@ -63,7 +63,7 @@ xx = np.linspace(1.0001, maxiter+1)
 for i in range(2): # row
     for j in range(3): # column
         for k in [1,2,0]: # linetype
-            y = cols[j].components[:,i*3+k,:50]
+            y = cols[j].vv[:,i*3+k,:50]
             if k == 0:
                 scl = np.max(y[1,:])
             ln = axs[i,j].loglog(x,y,alpha=0.3,color=colors[k],linestyle=styles[k],label=lbls[i][k])
